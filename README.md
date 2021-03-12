@@ -8,11 +8,13 @@ This action prints "Hello World" or "Hello" + the name of a person to greet to t
 
 **Required** The name of the person to greet. Default `"Word"`.
 
-## Outputs
+### `TRIAL_RUN`
 
-### `time`
+flag for trial run. No merge will happen, just logs the result.
 
-The time we greeted you.
+### `COMMIT_MESSAGE`
+
+Message to be used while merging!
 
 ## Example usage
 
