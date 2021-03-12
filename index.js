@@ -1,7 +1,7 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 
-function doesPrNeedsUpdate(octokit, pr_data) {
+async function doesPrNeedsUpdate(octokit, pr_data) {
   if (pr_data.merged === true) {
     core.warning("Skipping pull request, already merged.");
     return false;
@@ -17,14 +17,14 @@ function doesPrNeedsUpdate(octokit, pr_data) {
     return false;
   }
 
-  const { data: comparison } = octokit.repos.compareCommits({
+  const { data: comparison } = await octokit.repos.compareCommits({
     owner: pr_data.head.repo.owner.login,
     repo: pr_data.head.repo.name,
     // This base->head, head->base logic is intentional, we want
     // to see what would happen if we merged the base into head not
     // vice-versa.
-    base: pr_data.head.label.replace("srikarsams:", ""),
-    head: pr_data.base.label.replace("srikarsams:", ""),
+    base: pr_data.head.label,
+    head: pr_data.base.label,
   });
 
   console.log(
@@ -46,7 +46,7 @@ function doesPrNeedsUpdate(octokit, pr_data) {
   return true;
 }
 
-function run() {
+async function run() {
   const inputs = {
     githubToken: core.getInput("GITHUB_TOKEN", { required: true }),
   };
@@ -77,7 +77,7 @@ function run() {
     core.info("Rebase is allowed, proceeding with the merge");
 
     const octokit = github.getOctokit(inputs.githubToken);
-    const prNeedsUpdateFlag = doesPrNeedsUpdate(octokit, pr_data);
+    const prNeedsUpdateFlag = await doesPrNeedsUpdate(octokit, pr_data);
 
     if (prNeedsUpdateFlag) {
       core.info("PR branch is behind master. Updating now....");
