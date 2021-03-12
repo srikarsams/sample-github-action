@@ -55,7 +55,7 @@ async function rebase(octokit, pr_data, inputs) {
   const headRef = pr_data.head.ref;
 
   core.info(
-    `Updating branch '${ref}' on pull request #${pr_data.number} with changes from ref '${baseRef}'.`
+    `Updating branch '${headRef}' on pull request #${pr_data.number} with changes from ref '${baseRef}'.`
   );
 
   if (inputs.trailRun) {
@@ -150,5 +150,5 @@ async function run() {
 try {
   run();
 } catch (err) {
-  core.setFailed(err.message);
+  core.error(err.message);
 }
