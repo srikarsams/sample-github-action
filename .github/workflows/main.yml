@@ -10,6 +10,6 @@ jobs:
     steps:
       - name: Hello world action step
         id: hello
-        uses: srikarsams/sample-github-action@v1.3.10
+        uses: srikarsams/sample-github-action@v1.3.11
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

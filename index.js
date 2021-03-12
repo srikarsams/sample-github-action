@@ -5,18 +5,18 @@ async function run() {
   const inputs = {
     githubToken: core.getInput("GITHUB_TOKEN", { required: true }),
   };
-  const pr_data = github.context?.payload?.pull_request;
+  const pr_data = github.context.payload.pull_request;
   if (!pr_data) {
     core.setFailed("No PR data available!");
   }
-  const pr_number = github.context?.payload?.pull_request?.number;
+  const pr_number = github.context.payload.pull_request.number;
 
   if (!pr_number) {
     core.setFailed("No PR number available!");
   }
   console.log(`1. PR Number is ${pr_number}\n`);
 
-  const pr_body = github.context?.payload?.pull_request?.body;
+  const pr_body = github.context.payload.pull_request.body;
 
   if (!pr_body) {
     core.setFailed("No PR body available!\n");
