@@ -4,9 +4,9 @@ This action prints "Hello World" or "Hello" + the name of a person to greet to t
 
 ## Inputs
 
-### `who-to-greet`
+### `GITHUB_ACTION`
 
-**Required** The name of the person to greet. Default `"World"`.
+**Required** The name of the person to greet. Default `"Word"`.
 
 ## Outputs
 
