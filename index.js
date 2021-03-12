@@ -23,8 +23,8 @@ function doesPrNeedsUpdate(octokit, pr_data) {
     // This base->head, head->base logic is intentional, we want
     // to see what would happen if we merged the base into head not
     // vice-versa.
-    base: pr_data.head.label.replace("srikarsams:"),
-    head: pr_data.base.label.replace("srikarsams:"),
+    base: pr_data.head.label.replace("srikarsams:", ""),
+    head: pr_data.base.label.replace("srikarsams:", ""),
   });
 
   console.log(
