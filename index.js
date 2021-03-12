@@ -27,7 +27,17 @@ function doesPrNeedsUpdate(octokit, pr_data) {
     head: pr_data.base.label,
   });
 
-  console.log(JSON.stringify(comparison));
+  console.log(
+    JSON.stringify({
+      owner: pr_data.head.repo.owner.login,
+      repo: pr_data.head.repo.name,
+      // This base->head, head->base logic is intentional, we want
+      // to see what would happen if we merged the base into head not
+      // vice-versa.
+      base: pr_data.head.label,
+      head: pr_data.base.label,
+    })
+  );
   if (comparison.behind_by === 0) {
     core.info("Skipping pull request, up-to-date with base branch.");
     return false;
