@@ -1,6 +1,6 @@
 # Sample Github action
 
-This action prints "Hello World" or "Hello" + the name of a person to greet to the log.
+This action rabases the branches only if the checkbox is checked in the PR description.
 
 ## Inputs
 
