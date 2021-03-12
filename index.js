@@ -44,6 +44,7 @@ async function doesPrNeedsUpdate(octokit, pr_data) {
     head: pr_data.base.label,
   });
 
+  console.log(JSON.stringify(comparison), "comparison");
   if (comparison.behind_by === 0) {
     core.info("Skipping pull request, up-to-date with base branch.");
     return false;
@@ -80,6 +81,7 @@ async function rebase(octokit, pr_data, inputs) {
     const mergeResponse = await octokit.repos.merge(mergeOptions);
 
     const { status } = mergeResponse;
+    console.log(JSON.stringify(status), "status");
     if (status === 200) {
       core.info(
         `Branch update successful, new branch HEAD: ${mergeResponse.data.sha}.`
