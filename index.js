@@ -7,7 +7,7 @@ class RebaseAction {
     this.uncheckedString = `[ ] If you want to rebase/retry this PR, check this box`;
     this.inputs = {
       githubToken: core.getInput("GITHUB_TOKEN", { required: true }),
-      trialRun: Boolean(core.getInput("TRIAL_RUN")) || false,
+      trialRun: JSON.parse(core.getInput("TRIAL_RUN")) || false,
       commitMessage: core.getInput("COMMIT_MESSAGE") || "Rebasing done!",
     };
     this.octokit = github.getOctokit(this.inputs.githubToken);
@@ -86,7 +86,7 @@ class RebaseAction {
     // if trialRun is true, it just logs the merge details else proceeds with the merge
     if (this.inputs.trialRun) {
       core.warning(
-        `Would have merged ref '${headRef}' into ref '${baseRef}' but TRAIL_RUN was enabled.`
+        `Would have merged ref '${headRef}' into ref '${baseRef}' but TRAIL_RUN was ${this.inputs.trialRun}.`
       );
       return true;
     }
