@@ -4,9 +4,8 @@ on:
     types: [opened, edited]
 
 jobs:
-  hello_world_job:
+  rebase-job:
     runs-on: ubuntu-latest
-    name: A job to rebase the branch
     steps:
       - name: Rebase actions
         id: rebase

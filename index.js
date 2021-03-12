@@ -19,28 +19,31 @@ function run() {
   const pr_body = github.context.payload.pull_request.body;
 
   if (!pr_body) {
-    core.setFailed("No PR body available!\n");
+    core.setFailed("No PR body available!");
   }
-  console.log(`PR Body: ${pr_body}`);
-  const regex_for_rebase_check = new RegExp(
-    /\[x\] If you want to rebase\/retry this PR, check this box/
-  );
-  const isRebaseAllowed = regex_for_rebase_check.test(pr_body);
+  console.log(`2. PR Body: ${pr_body}`);
+  const regex = /\[x\] If you want to rebase\/retry this PR, check this box/;
+  const regexTest = new RegExp(regex);
+  const isRebaseAllowed = regexTest.test(pr_body);
 
   if (!isRebaseAllowed) {
-    console.log("2. Rebase is not allowed since it is unchecked\n");
+    console.log("3. Rebase is not allowed since it is unchecked");
   } else {
-    console.log("2. Rebase is allowed, proceeding with the merge\n");
+    console.log("3. Rebase is allowed, proceeding with the merge");
+
+    const updatedBody = pr_body.replace(
+      regex,
+      `- [ ] If you want to rebase/retry this PR, check this box`
+    );
     const params = {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       pull_number: pr_number,
-      body: "- [ ] If you want to rebase/retry this PR, check this box\n",
+      body: updatedBody,
     };
-    console.log(`Github token ${inputs.githubToken}`);
     const octokit = github.getOctokit(inputs.githubToken);
     octokit.pulls.update(params);
-    console.log("3. Updated the branch with unchecked body\n");
+    console.log("4. Updated the branch with unchecked body");
   }
 }
 
