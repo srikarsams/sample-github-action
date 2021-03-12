@@ -40,8 +40,8 @@ async function doesPrNeedsUpdate(octokit, pr_data) {
     // This base->head, head->base logic is intentional, we want
     // to see what would happen if we merged the base into head not
     // vice-versa.
-    base: pr_data.head.label,
-    head: pr_data.base.label,
+    base: pr_data.base.label,
+    head: pr_data.head.label,
   });
 
   console.log(JSON.stringify(comparison), "comparison");
@@ -82,7 +82,7 @@ async function rebase(octokit, pr_data, inputs) {
 
     const { status } = mergeResponse;
     console.log(JSON.stringify(status), "status");
-    if (status === 200) {
+    if (status === 200 || status === 201) {
       core.info(
         `Branch update successful, new branch HEAD: ${mergeResponse.data.sha}.`
       );
