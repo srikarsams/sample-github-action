@@ -1,4 +1,6 @@
-on: [pull_request]
+on:
+  pull_request:
+    types: [opened, edited]
 
 jobs:
   hello_world_job:
@@ -7,7 +9,7 @@ jobs:
     steps:
       - name: Hello world action step
         id: hello
-        uses: srikarsams/sample-github-action@v1.3.7
+        uses: srikarsams/sample-github-action@v1.3.8
         with:
           who-to-greet: "Srikar"
       # Use the output from the `hello` step
