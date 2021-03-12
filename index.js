@@ -27,6 +27,7 @@ function doesPrNeedsUpdate(octokit, pr_data) {
     head: pr_data.base.label,
   });
 
+  console.log(JSON.stringify(comparison));
   if (comparison.behind_by === 0) {
     core.info("Skipping pull request, up-to-date with base branch.");
     return false;
