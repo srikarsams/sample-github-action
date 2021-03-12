@@ -1,3 +1,4 @@
+name: Rebase
 on:
   pull_request:
     types: [opened, edited]
@@ -9,9 +10,6 @@ jobs:
     steps:
       - name: Hello world action step
         id: hello
-        uses: srikarsams/sample-github-action@v1.3.9
+        uses: srikarsams/sample-github-action@v1.3.10
         with:
-          who-to-greet: "Srikar"
-      # Use the output from the `hello` step
-      - name: Get the output time
-        run: echo "The time was ${{ steps.hello.outputs.time }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
