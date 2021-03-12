@@ -3,7 +3,7 @@ const github = require("@actions/github");
 
 const regex = /\[x\] If you want to rebase\/retry this PR, check this box/;
 
-function resetCheckbox(octokit, pr_data) {
+async function resetCheckbox(octokit, pr_data) {
   const updatedBody = pr_data.body.replace(
     regex,
     `[ ] If you want to rebase/retry this PR, check this box`
@@ -14,7 +14,7 @@ function resetCheckbox(octokit, pr_data) {
     pull_number: pr_data.number,
     body: updatedBody,
   };
-  octokit.pulls.update(params);
+  await octokit.pulls.update(params);
   core.info("Unchecked the rebase flag in PR description");
 }
 
@@ -37,19 +37,17 @@ async function doesPrNeedsUpdate(octokit, pr_data) {
   const { data: comparison } = await octokit.repos.compareCommits({
     owner: pr_data.head.repo.owner.login,
     repo: pr_data.head.repo.name,
-    // This base->head, head->base logic is intentional, we want
-    // to see what would happen if we merged the base into head not
-    // vice-versa.
     base: pr_data.base.label,
     head: pr_data.head.label,
   });
 
-  console.log(JSON.stringify(comparison), "comparison");
   if (comparison.behind_by === 0) {
     core.info("Skipping pull request, up-to-date with base branch.");
     return false;
   }
-
+  core.info(
+    `Master is ahead of ${pr_data.head.ref} by ${comparison.behind_by} commits`
+  );
   return true;
 }
 
@@ -71,7 +69,6 @@ async function rebase(octokit, pr_data, inputs) {
   const mergeOptions = {
     owner: pr_data.head.repo.owner.login,
     repo: pr_data.head.repo.name,
-    // We want to merge the base branch into this one.
     base: headRef,
     head: baseRef,
     commit_message: inputs.commitMessage || "Rebasing done!",
@@ -81,7 +78,6 @@ async function rebase(octokit, pr_data, inputs) {
     const mergeResponse = await octokit.repos.merge(mergeOptions);
 
     const { status } = mergeResponse;
-    console.log(JSON.stringify(status), "status");
     if (status === 200 || status === 201) {
       core.info(
         `Branch update successful, new branch HEAD: ${mergeResponse.data.sha}.`
@@ -96,11 +92,11 @@ async function rebase(octokit, pr_data, inputs) {
       core.error(
         "Merge conflict error. Not proceeding with merge. Please resolve manually"
       );
-      resetCheckbox(octokit, pr_data);
+      await resetCheckbox(octokit, pr_data);
       throw err;
     }
     core.error(`Caught error trying to update branch: ${err.message}`);
-    resetCheckbox(octokit, pr_data);
+    await resetCheckbox(octokit, pr_data);
     throw err;
   }
 }
@@ -140,9 +136,9 @@ async function run() {
     if (prNeedsUpdate) {
       core.info("PR branch is behind master. Updating now....");
       rebase(octokit, pr_data, inputs);
-      resetCheckbox(octokit, pr_data);
+      await resetCheckbox(octokit, pr_data);
     } else {
-      resetCheckbox(octokit, pr_data);
+      await resetCheckbox(octokit, pr_data);
       core.warning(
         "PR branch is up-to-date with master. Not proceeding with merge"
       );
