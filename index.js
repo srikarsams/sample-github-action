@@ -1,153 +1,177 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 
-const regex = /\[x\] If you want to rebase\/retry this PR, check this box/;
-
-async function resetCheckbox(octokit, pr_data) {
-  const updatedBody = pr_data.body.replace(
-    regex,
-    `[ ] If you want to rebase/retry this PR, check this box`
-  );
-  const params = {
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-    pull_number: pr_data.number,
-    body: updatedBody,
-  };
-  await octokit.pulls.update(params);
-  core.info("Unchecked the rebase flag in PR description");
-}
-
-async function doesPrNeedsUpdate(octokit, pr_data) {
-  if (pr_data.merged === true) {
-    core.warning("Skipping pull request, already merged.");
-    return false;
+class RebaseAction {
+  contructor() {
+    this.checkedRegex = /\[x\] If you want to rebase\/retry this PR, check this box/;
+    this.uncheckedString = `[ ] If you want to rebase/retry this PR, check this box`;
+    this.inputs = {
+      githubToken: core.getInput("GITHUB_TOKEN", { required: true }),
+      trialRun: core.getInput("TRIAL_RUN") || false,
+      commitMessage: core.getInput("COMMIT_MESSAGE") || "Rebasing done!",
+    };
+    this.octokit = github.getOctokit(this.inputs.githubToken);
+    this.pr_data = github.context.payload.pull_request;
+    this.pr_body = this.pr_data.body;
+    this.pr_number = this.pr_data.number;
+    this.repo_data = github.context.repo;
   }
-  if (pr_data.state !== "open") {
-    core.warning(
-      `Skipping pull request, no longer open (current state: ${pull.state}).`
+
+  /**
+   * Resets the checkbox in the PR description
+   */
+  async resetCheckbox() {
+    // replacing the checked rebase prompt with unchecked one
+    const updatedBody = this.pr_body.replace(
+      this.checkedRegex,
+      this.uncheckedString
     );
-    return false;
-  }
-  if (!pr_data.head.repo) {
-    core.warning(`Skipping pull request, fork appears to have been deleted.`);
-    return false;
-  }
-
-  const { data: comparison } = await octokit.repos.compareCommits({
-    owner: pr_data.head.repo.owner.login,
-    repo: pr_data.head.repo.name,
-    base: pr_data.base.label,
-    head: pr_data.head.label,
-  });
-
-  if (comparison.behind_by === 0) {
-    core.info("Skipping pull request, up-to-date with base branch.");
-    return false;
-  }
-  core.info(
-    `Master is ahead of ${pr_data.head.ref} by ${comparison.behind_by} commits`
-  );
-  return true;
-}
-
-async function rebase(octokit, pr_data, inputs) {
-  const baseRef = pr_data.base.ref;
-  const headRef = pr_data.head.ref;
-
-  core.info(
-    `Updating branch '${headRef}' on pull request #${pr_data.number} with changes from ref '${baseRef}'.`
-  );
-
-  if (inputs.trailRun) {
-    ghCore.warning(
-      `Would have merged ref '${headRef}' into ref '${baseRef}' but TRAIL_RUN was enabled.`
-    );
-    return true;
+    const params = {
+      owner: this.repo_data.owner,
+      repo: this.repo_data.repo,
+      pull_number: this.pr_number,
+      body: updatedBody,
+    };
+    await this.octokit.pulls.update(params);
+    core.info("Unchecked the rebase flag in PR description");
   }
 
-  const mergeOptions = {
-    owner: pr_data.head.repo.owner.login,
-    repo: pr_data.head.repo.name,
-    base: headRef,
-    head: baseRef,
-    commit_message: inputs.commitMessage || "Rebasing done!",
-  };
-
-  try {
-    const mergeResponse = await octokit.repos.merge(mergeOptions);
-
-    const { status } = mergeResponse;
-    if (status === 200 || status === 201) {
-      core.info(
-        `Branch update successful, new branch HEAD: ${mergeResponse.data.sha}.`
+  /**
+   * Checks whether PR can be merged
+   */
+  async doesPrNeedsUpdate() {
+    if (this.pr_data.merged === true) {
+      core.warning("Skipping pull request, already merged.");
+      return false;
+    }
+    if (this.pr_data.state !== "open") {
+      core.warning(
+        `Skipping pull request, no longer open (current state: ${this.pr_data.state}).`
       );
-    } else if (status === 204) {
-      core.info("Branch update not required, branch is already up-to-date.");
+      return false;
+    }
+    if (!this.pr_data.head.repo) {
+      core.warning(`Skipping pull request, fork appears to have been deleted.`);
+      return false;
     }
 
+    const { data: comparison } = await this.octokit.repos.compareCommits({
+      owner: this.pr_data.head.repo.owner.login,
+      repo: this.pr_data.head.repo.name,
+      base: this.pr_data.base.label,
+      head: this.pr_data.head.label,
+    });
+
+    if (comparison.behind_by === 0) {
+      core.info("Skipping pull request, up-to-date with base branch.");
+      return false;
+    }
+    core.info(
+      `Master is ahead of ${this.pr_data.head.ref} by ${comparison.behind_by} commits`
+    );
     return true;
-  } catch (err) {
-    if (err.message === "Merge conflict") {
-      core.error(
-        "Merge conflict error. Not proceeding with merge. Please resolve manually"
+  }
+
+  /**
+   * Rebases the branch
+   */
+  async rebase() {
+    const baseRef = this.pr_data.base.ref;
+    const headRef = this.pr_data.head.ref;
+
+    core.info(
+      `Updating branch '${headRef}' on pull request #${this.pr_data.number} with changes from ref '${baseRef}'.`
+    );
+
+    // if trialRun is true, it just logs the merge details else proceeds with the merge
+    if (this.inputs.trialRun) {
+      core.warning(
+        `Would have merged ref '${headRef}' into ref '${baseRef}' but TRAIL_RUN was enabled.`
       );
-      await resetCheckbox(octokit, pr_data);
+      return true;
+    }
+
+    const mergeOptions = {
+      owner: this.pr_data.head.repo.owner.login,
+      repo: this.pr_data.head.repo.name,
+      base: headRef,
+      head: baseRef,
+      commit_message: this.inputs.commitMessage,
+    };
+
+    try {
+      const mergeResponse = await this.octokit.repos.merge(mergeOptions);
+
+      const { status } = mergeResponse;
+      if (status === 200 || status === 201) {
+        core.info(
+          `Branch update successful, new branch HEAD: ${mergeResponse.data.sha}.`
+        );
+      } else if (status === 204) {
+        core.info("Branch update not required, branch is already up-to-date.");
+      }
+
+      return true;
+    } catch (err) {
+      if (err.message === "Merge conflict") {
+        core.error(
+          "Merge conflict error. Not proceeding with merge. Please resolve the conflicts manually"
+        );
+        await this.resetCheckbox();
+        throw err;
+      }
+      core.error(`Caught error trying to update branch: ${err.message}`);
+      await this.resetCheckbox();
       throw err;
     }
-    core.error(`Caught error trying to update branch: ${err.message}`);
-    await resetCheckbox(octokit, pr_data);
-    throw err;
-  }
-}
-
-async function run() {
-  const inputs = {
-    githubToken: core.getInput("GITHUB_TOKEN", { required: true }),
-  };
-  const pr_data = github.context.payload.pull_request;
-  if (!pr_data) {
-    core.setFailed("No PR data available!");
-  }
-  const pr_number = pr_data.number;
-
-  if (!pr_number) {
-    core.setFailed("No PR number available!");
-  }
-  core.info(`PR Number is ${pr_number}`);
-
-  const pr_body = pr_data.body;
-
-  if (!pr_body) {
-    core.setFailed("No PR body available!");
   }
 
-  const regexTest = new RegExp(regex);
-  const isRebaseAllowed = regexTest.test(pr_body);
+  /**
+   * Starts the validation and merge process
+   */
+  async run() {
+    if (!this.pr_data) {
+      core.setFailed("No PR data available!");
+    }
 
-  if (!isRebaseAllowed) {
-    core.info("Rebase is not allowed since it is unchecked");
-  } else {
-    core.info("Rebase is allowed, proceeding with the merge");
+    if (!this.pr_number) {
+      core.setFailed("No PR number available!");
+    }
+    core.info(`PR Number is ${this.pr_number}`);
 
-    const octokit = github.getOctokit(inputs.githubToken);
-    const prNeedsUpdate = await doesPrNeedsUpdate(octokit, pr_data);
+    if (!this.pr_body) {
+      core.setFailed("No PR body available!");
+    }
 
-    if (prNeedsUpdate) {
-      core.info("PR branch is behind master. Updating now....");
-      rebase(octokit, pr_data, inputs);
-      await resetCheckbox(octokit, pr_data);
+    const regexTest = new RegExp(this.checkedRegex);
+    const isRebaseAllowed = regexTest.test(this.pr_body);
+
+    if (!isRebaseAllowed) {
+      core.info("Rebase is not allowed since it is unchecked");
     } else {
-      await resetCheckbox(octokit, pr_data);
-      core.warning(
-        "PR branch is up-to-date with master. Not proceeding with merge"
+      core.info(
+        "Flag is checked, rebase is allowed. Proceeding with the merge"
       );
+
+      const prNeedsUpdate = await doesPrNeedsUpdate();
+
+      if (prNeedsUpdate) {
+        core.info("PR branch is behind master. Updating now....");
+        await this.rebase();
+      } else {
+        core.warning(
+          "PR branch is up-to-date with master. Not proceeding with merge"
+        );
+      }
+      await this.resetCheckbox();
     }
   }
 }
 
+const rebaseInstance = new RebaseAction();
 try {
-  run();
+  rebaseInstance.run();
 } catch (err) {
+  rebaseInstance.resetCheckbox();
   core.error(err.message);
 }
