@@ -2,7 +2,7 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 
 class RebaseAction {
-  contructor() {
+  constructor() {
     this.checkedRegex = /\[x\] If you want to rebase\/retry this PR, check this box/;
     this.uncheckedString = `[ ] If you want to rebase/retry this PR, check this box`;
     this.inputs = {
@@ -153,7 +153,7 @@ class RebaseAction {
         "Flag is checked, rebase is allowed. Proceeding with the merge"
       );
 
-      const prNeedsUpdate = await doesPrNeedsUpdate();
+      const prNeedsUpdate = await this.doesPrNeedsUpdate();
 
       if (prNeedsUpdate) {
         core.info("PR branch is behind master. Updating now....");
@@ -169,6 +169,7 @@ class RebaseAction {
 }
 
 const rebaseInstance = new RebaseAction();
+console.log(JSON.stringify(rebaseInstance, undefined, 2));
 try {
   rebaseInstance.run();
 } catch (err) {
