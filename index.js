@@ -7,7 +7,7 @@ class RebaseAction {
     this.uncheckedString = `[ ] If you want to rebase/retry this PR, check this box`;
     this.inputs = {
       githubToken: core.getInput("GITHUB_TOKEN", { required: true }),
-      trialRun: core.getInput("TRIAL_RUN") || false,
+      trialRun: Boolean(core.getInput("TRIAL_RUN")) || false,
       commitMessage: core.getInput("COMMIT_MESSAGE") || "Rebasing done!",
     };
     this.octokit = github.getOctokit(this.inputs.githubToken);
@@ -169,7 +169,6 @@ class RebaseAction {
 }
 
 const rebaseInstance = new RebaseAction();
-console.log(JSON.stringify(rebaseInstance, undefined, 2));
 try {
   rebaseInstance.run();
 } catch (err) {
