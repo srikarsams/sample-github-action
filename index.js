@@ -1,7 +1,7 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 
-async function run() {
+function run() {
   const inputs = {
     githubToken: core.getInput("GITHUB_TOKEN", { required: true }),
   };
@@ -21,7 +21,7 @@ async function run() {
   if (!pr_body) {
     core.setFailed("No PR body available!\n");
   }
-
+  console.log(`PR Body: ${pr_body}`);
   const regex_for_rebase_check = new RegExp(
     /\[x\] If you want to rebase\/retry this PR, check this box/
   );
@@ -35,10 +35,11 @@ async function run() {
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       pull_number: pr_number,
-      body: "[ ] If you want to rebase/retry this PR, check this box\n",
+      body: "- [ ] If you want to rebase/retry this PR, check this box\n",
     };
-    const octokit = new github.GitHub(inputs.githubToken);
-    await octokit.pulls.update(params);
+    console.log(`Github token ${inputs.githubToken}`);
+    const octokit = github.getOctokit(inputs.githubToken);
+    octokit.pulls.update(params);
     console.log("3. Updated the branch with unchecked body\n");
   }
 }
