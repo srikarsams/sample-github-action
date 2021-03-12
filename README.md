@@ -18,6 +18,7 @@ Message to be used while merging!
 
 ## Example usage
 
-uses: actions/sample-github-action@v1.1
-with:
-who-to-greet: 'Cat'
+uses: srikarsams/sample-github-action@v1.3.29
+  with:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    COMMIT_MESSAGE: "Rebase done successfully!"
