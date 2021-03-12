@@ -1,6 +1,8 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 
+const regex = /\[x\] If you want to rebase\/retry this PR, check this box/;
+
 function resetCheckbox(octokit, pr_data) {
   const updatedBody = pr_data.body.replace(
     regex,
@@ -122,7 +124,6 @@ async function run() {
     core.setFailed("No PR body available!");
   }
 
-  const regex = /\[x\] If you want to rebase\/retry this PR, check this box/;
   const regexTest = new RegExp(regex);
   const isRebaseAllowed = regexTest.test(pr_body);
 
