@@ -9,6 +9,6 @@ jobs:
     steps:
       - name: Rebase actions
         id: rebase
-        uses: srikarsams/sample-github-action@v1.3.13
+        uses: srikarsams/sample-github-action@v1.3.21
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
